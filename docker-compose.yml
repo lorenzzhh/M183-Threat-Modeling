@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: tresordb
+    environment:
+      MARIADB_ROOT_PASSWORD: "1234"
+      MARIADB_DATABASE: tresordb
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./backend/tresordb.sql:/docker-entrypoint-initdb.d/tresordb.sql:ro
+      - tresordb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    image: tresorbackendimg
+    container_name: tresorbackend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tresordb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: "1234"
+      CROSS_ORIGIN: http://localhost:3000
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    image: tresorfrontendimg
+    container_name: tresorfrontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  tresordb-data:
