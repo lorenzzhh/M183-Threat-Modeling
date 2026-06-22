@@ -1,12 +1,14 @@
 package ch.bbw.pr.tresorbackend.controller;
 
 import ch.bbw.pr.tresorbackend.model.*;
+import ch.bbw.pr.tresorbackend.service.LoginRateLimiterService;
 import ch.bbw.pr.tresorbackend.service.PasswordEncryptService;
 import ch.bbw.pr.tresorbackend.service.UserService;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ public class UserController {
 
    private UserService userService;
    private PasswordEncryptService passwordService;
+   private LoginRateLimiterService rateLimiter;
    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
    // build create User REST API
@@ -172,8 +175,16 @@ public class UserController {
    // simple login with no websecurity, just name and password
    @CrossOrigin(origins = "${CROSS_ORIGIN}")
    @PostMapping("/login")
-   public ResponseEntity<LoginResponse> doLoginUser(@RequestBody LoginUser loginUser, BindingResult bindingResult) {
+   public ResponseEntity<LoginResponse> doLoginUser(@RequestBody LoginUser loginUser, BindingResult bindingResult,
+                                                    HttpServletRequest request) {
       System.out.println("UserController.doLoginUser: " + loginUser);
+
+      String ip = request.getRemoteAddr();
+      if (rateLimiter.isBlocked(ip)) {
+         logger.warn("UserController.doLoginUser: rate limit exceeded for IP {}", ip);
+         return ResponseEntity.status(429).body(new LoginResponse("Too many login attempts. Please try again later.", null));
+      }
+      rateLimiter.recordAttempt(ip);
 
       if (bindingResult.hasErrors()) {
          String errorMessage = bindingResult.getFieldErrors().stream()
