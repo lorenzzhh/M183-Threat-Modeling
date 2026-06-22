@@ -1,29 +1,37 @@
-S	Spoofing (Identitätsfälschung)	
-1. Gestohlene Benutzeranmeldedaten verwenden
-2. Session-Cookie eines anderen Nutzers übernehmen
-3. Gefälschte API- oder Service-Identität vortäuschen
+# STRIDE Analyse
 
-T	Tampering (Manipulation von Daten)	
-1. Datenbankeinträge verändern
-2. HTTP-Requests manipulieren (z. B. Preisänderung im Warenkorb)
-3. Konfigurationsdateien unerlaubt bearbeiten
+## S – Spoofing (Identitätsfälschung)
 
-R	Repudiation (Abstreiten von Aktionen)	
-1. Nutzer behauptet, eine Transaktion nie ausgeführt zu haben
-2. Administrator bestreitet eine Konfigurationsänderung
-3. Fehlende oder manipulierbare Log-Dateien verhindern Nachweise
+1. Ein Angreifer verwendet gestohlene Login-Daten eines Benutzers.
+2. Ein gefälschtes JWT- oder Session-Token wird genutzt, um sich als anderer Nutzer auszugeben.
+3. Ein Angreifer gibt sich gegenüber der API als legitimer Client aus.
 
-I	Information Disclosure (Informationspreisgabe)	
-1. Datenleck mit Kundendaten
-2. Unverschlüsselte Übertragung sensibler Daten
-3. Fehlermeldungen geben interne Systeminformationen preis
+## T – Tampering (Manipulation von Daten)
 
-D	Denial of Service (Dienstverweigerung)	
-1. Server durch Massenanfragen überlasten
-2. Ressourcenerschöpfung durch große Datei-Uploads
-3. Netzwerk-Flooding-Angriffe
+1. Manipulation eines API-Requests, um fremde Secrets zu verändern.
+2. Direkte Änderung von Datenbankeinträgen mit gespeicherten Zugangsdaten.
+3. Veränderung von verschlüsselten Tresor-Daten während der Übertragung.
 
-E	Elevation of Privilege (Rechteausweitung)	
-1. Normaler Nutzer erhält Adminrechte
-2. Ausnutzen einer Schwachstelle zur Root-Rechte-Eskalation
-3. Zugriff auf Funktionen, die eigentlich nur Administratoren nutzen dürfen
+## R – Repudiation (Abstreiten von Aktionen)
+
+1. Ein Benutzer löscht einen Tresor-Eintrag und bestreitet dies später.
+2. Ein Nutzer behauptet, nie ein Secret erstellt oder bearbeitet zu haben.
+3. Fehlende Audit-Logs verhindern die Nachvollziehbarkeit von Änderungen.
+
+## I – Information Disclosure (Informationspreisgabe)
+
+1. Ein Benutzer kann aufgrund fehlerhafter Autorisierung Secrets anderer Nutzer abrufen.
+2. Passwörter oder sensible Daten werden unverschlüsselt übertragen.
+3. Fehlermeldungen geben interne Systeminformationen oder Datenbankdetails preis.
+
+## D – Denial of Service (Dienstverweigerung)
+
+1. Massenhafte Login-Anfragen überlasten den Authentifizierungsdienst.
+2. Sehr große Requests führen zu Speicher- oder Ressourcenerschöpfung.
+3. Automatisierte API-Aufrufe verhindern die Nutzung des Systems durch legitime Benutzer.
+
+## E – Elevation of Privilege (Rechteausweitung)
+
+1. Ein normaler Benutzer erhält Zugriff auf Administratorfunktionen.
+2. Fehlende Zugriffskontrollen ermöglichen den Zugriff auf fremde Tresor-Einträge.
+3. Manipulation von Benutzer-IDs in Requests führt zu unberechtigten Berechtigungen.
