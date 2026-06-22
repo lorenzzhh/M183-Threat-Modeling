@@ -16,30 +16,35 @@
 
 ```mermaid
 flowchart TD
-    U(["👤 Benutzer\n(Browser)"])
+    U(["Benutzer / Browser"])
 
-    subgraph TB1 ["Trust Boundary TB1 — Internet / Systemgrenze"]
-        subgraph FE ["Frontend-Prozess\nReact / nginx · Port 3000"]
-            FE_INT["Seiten: Login, Register,\nSecrets, Users"]
-        end
+    TB1{{"TB1: Internet-Grenze"}}
 
-        subgraph TB2 ["Trust Boundary TB2 — Frontend / Backend"]
-            subgraph BE ["Backend-Prozess\nSpring Boot · Port 8080"]
-                BE_INT["REST-API\n/api/users\n/api/secrets"]
-            end
-
-            subgraph TB3 ["Trust Boundary TB3 — Applikation / Datenbank"]
-                DB[("MariaDB\nPort 3306\n\nTabellen:\nuser · secret")]
-            end
-        end
+    subgraph FE_PROC ["Frontend-Prozess  |  React / nginx  |  Port 3000"]
+        FE["Login · Register · Secrets · Users"]
     end
 
-    U -- "HTTP :3000\nLogin · Register · Secrets" --> FE_INT
-    FE_INT -- "HTTP REST :8080\nJSON-Requests" --> BE_INT
-    BE_INT -- "MySQL :3306\nJPA / JDBC" --> DB
-    DB -- "Resultset" --> BE_INT
-    BE_INT -- "JSON-Response" --> FE_INT
-    FE_INT -- "HTML / JS" --> U
+    TB2{{"TB2: Frontend / Backend-Grenze"}}
+
+    subgraph BE_PROC ["Backend-Prozess  |  Spring Boot  |  Port 8080"]
+        BE["REST-API: /api/users · /api/secrets"]
+    end
+
+    TB3{{"TB3: Applikation / Datenbank-Grenze"}}
+
+    subgraph DB_PROC ["Datenspeicher  |  MariaDB  |  Port 3306"]
+        DB[("Tabellen: user · secret")]
+    end
+
+    U -->|"HTTP :3000"| TB1
+    TB1 --> FE_PROC
+    FE_PROC -->|"HTTP REST :8080 / JSON"| TB2
+    TB2 --> BE_PROC
+    BE_PROC -->|"MySQL :3306 / JDBC"| TB3
+    TB3 --> DB_PROC
+    DB_PROC -->|"Resultset"| BE_PROC
+    BE_PROC -->|"JSON Response"| FE_PROC
+    FE_PROC -->|"HTML / JS"| U
 ```
 
 ### 2.1 Trust Boundaries
