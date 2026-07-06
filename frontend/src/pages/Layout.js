@@ -26,14 +26,6 @@ const Layout = ({loginValues}) => {
                             <li><a href="/">logout</a></li> {/* as no link it will reload an cleanup useStates*/}
                         </ul>
                     </li>
-                    <li><span>Admin</span>
-                        <ul>
-                            <li><Link to="/user/users">All users</Link></li>
-                            <li>Add user</li>
-                            <li><Link to="/user/users/:id">Edit user</Link></li>
-                            <li>All secrets</li>
-                        </ul>
-                    </li>
                     <li>
                         <Link to="/">About</Link>
                     </li>

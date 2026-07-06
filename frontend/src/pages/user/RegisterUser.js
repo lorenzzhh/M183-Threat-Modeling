@@ -33,9 +33,11 @@ function RegisterUser({loginValues, setLoginValues}) {
 
         try {
             await postUser(credentials);
-            setLoginValues({userName: credentials.email, password: credentials.password});
+            // Registration alone doesn't log you in (no token yet) -
+            // send the user to the login page instead.
+            setLoginValues(prevValues => ({...prevValues, email: credentials.email, password: ""}));
             setCredentials(initialState);
-            navigate('/');
+            navigate('/user/login');
         } catch (error) {
             console.error('Failed to fetch to server:', error.message);
             setErrorMessage(error.message);
