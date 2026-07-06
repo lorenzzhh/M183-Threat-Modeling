@@ -7,28 +7,29 @@ GRANT ALL PRIVILEGES ON tresordb.* TO 'tresoruser'@'%';
 FLUSH PRIVILEGES;
 
 CREATE TABLE user (
-    id INT NOT NULL AUTO_INCREMENT,
-    first_name VARCHAR(30) NOT NULL,
-    last_name VARCHAR(30) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    password LONGTEXT NOT NULL,
-    PRIMARY KEY (id)
+                      id INT NOT NULL AUTO_INCREMENT,
+                      first_name VARCHAR(30) NOT NULL,
+                      last_name VARCHAR(30) NOT NULL,
+                      email VARCHAR(255) NOT NULL,
+                      password LONGTEXT NOT NULL,
+                      role VARCHAR(20) NOT NULL DEFAULT 'USER',
+                      PRIMARY KEY (id)
 );
 
 CREATE TABLE secret (
-    id INT NOT NULL AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    content JSON NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES user(id)
+                        id INT NOT NULL AUTO_INCREMENT,
+                        user_id INT NOT NULL,
+                        content JSON NOT NULL,
+                        PRIMARY KEY (id),
+                        FOREIGN KEY (user_id) REFERENCES user(id)
 );
 
-INSERT INTO `user` (`id`, `first_name`, `last_name`, `email`, `password`) VALUES
-  (1, 'Hans', 'Muster', 'hans.muster@bbw.ch', '$2b$10$tt8qnL2xQABwpIU6uPIkyuw3D8b3mBmqkkLcpYh9wlhs5t0eu5yD6'),
-  (2, 'Paula', 'Kuster', 'paula.kuster@bbw.ch', '$2b$10$xOs/vdxH/XQUmDV5UIw6uuo8UoEdtCsS8gwrEg1r/6NP9m0OwF8bq'),
-  (3, 'Andrea', 'Oester', 'andrea.oester@bbw.ch', '$2b$10$uWVz8J.KkZfFFQFlYJzaquxML9/YZ2l2m02IBziWjRlDCUhHTjyoC');
+INSERT INTO `user` (`id`, `first_name`, `last_name`, `email`, `password`, `role`) VALUES
+                                                                                      (1, 'Hans', 'Muster', 'hans.muster@bbw.ch', '$2b$10$tt8qnL2xQABwpIU6uPIkyuw3D8b3mBmqkkLcpYh9wlhs5t0eu5yD6', 'USER'),
+                                                                                      (2, 'Paula', 'Kuster', 'paula.kuster@bbw.ch', '$2b$10$xOs/vdxH/XQUmDV5UIw6uuo8UoEdtCsS8gwrEg1r/6NP9m0OwF8bq', 'USER'),
+                                                                                      (3, 'Andrea', 'Oester', 'andrea.oester@bbw.ch', '$2b$10$uWVz8J.KkZfFFQFlYJzaquxML9/YZ2l2m02IBziWjRlDCUhHTjyoC', 'Admin');
 
 INSERT INTO `secret` (`id`, `user_id`, `content`) VALUES
-    (1, 1, '{"kindid":1,"kind":"credential","userName":"muster","password":"1234","url":"www.bbw.ch"}'),
-    (2, 1, '{"kindid":2,"kind":"creditcard","cardtype":"Visa","cardnumber":"4242 4242 4242 4241","expiration":"12/27","cvv":"789"}'),
-    (3, 1, '{"kindid":3,"kind":"note","title":"Eragon","content":"Und Eragon ging auf den Drachen zu."}');
+                                                      (1, 1, '{"kindid":1,"kind":"credential","userName":"muster","password":"1234","url":"www.bbw.ch"}'),
+                                                      (2, 1, '{"kindid":2,"kind":"creditcard","cardtype":"Visa","cardnumber":"4242 4242 4242 4241","expiration":"12/27","cvv":"789"}'),
+                                                      (3, 1, '{"kindid":3,"kind":"note","title":"Eragon","content":"Und Eragon ging auf den Drachen zu."}');

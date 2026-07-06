@@ -70,13 +70,16 @@ public class UserController {
       System.out.println("UserController.createUser, password validation passed");
 
       //transform registerUser to user
+      //Role is always USER here - RegisterUser has no role field, so there
+      //is no way for a client to request ADMIN on self-registration.
       User user = new User(
-            null,
-            registerUser.getFirstName(),
-            registerUser.getLastName(),
-            registerUser.getEmail(),
-            passwordService.hashPassword(registerUser.getPassword())
-            );
+              null,
+              registerUser.getFirstName(),
+              registerUser.getLastName(),
+              registerUser.getEmail(),
+              passwordService.hashPassword(registerUser.getPassword()),
+              Role.USER
+      );
 
       User savedUser = userService.createUser(user);
       JsonObject obj = new JsonObject();
@@ -222,7 +225,7 @@ public class UserController {
          return ResponseEntity.badRequest().body(new LoginResponse("Invalid email or password", null));
       }
 
-      String token = sessionService.createSession(user.getId());
+      String token = sessionService.createSession(user.getId(), user.getRole());
       System.out.println("UserController.doLoginUser: login successful");
       return ResponseEntity.ok(new LoginResponse("Login successful", user.getId(), token));
    }
@@ -235,5 +238,14 @@ public class UserController {
     */
    private Long currentUserId(HttpServletRequest request) {
       return (Long) request.getAttribute(JwtAuthFilter.AUTH_USER_ID_ATTRIBUTE);
+   }
+
+
+   private Role currentUserRole(HttpServletRequest request) {
+      return (Role) request.getAttribute(JwtAuthFilter.AUTH_USER_ROLE_ATTRIBUTE);
+   }
+
+   private boolean isAdmin(HttpServletRequest request) {
+      return currentUserRole(request) == Role.ADMIN;
    }
 }

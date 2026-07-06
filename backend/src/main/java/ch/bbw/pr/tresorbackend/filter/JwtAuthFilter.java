@@ -30,6 +30,7 @@ import java.util.List;
 public class JwtAuthFilter implements Filter {
 
    public static final String AUTH_USER_ID_ATTRIBUTE = "authUserId";
+   public static final String AUTH_USER_ROLE_ATTRIBUTE = "authUserRole";
 
    // Endpoints reachable without being logged in yet.
    private static final List<String> PUBLIC_PATHS = List.of(
@@ -69,6 +70,7 @@ public class JwtAuthFilter implements Filter {
       }
 
       request.setAttribute(AUTH_USER_ID_ATTRIBUTE, userId);
+      request.setAttribute(AUTH_USER_ROLE_ATTRIBUTE, sessionService.getRole(token));
       chain.doFilter(request, response);
    }
 }
