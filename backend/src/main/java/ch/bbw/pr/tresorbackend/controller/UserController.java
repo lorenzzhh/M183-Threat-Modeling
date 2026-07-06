@@ -1,8 +1,10 @@
 package ch.bbw.pr.tresorbackend.controller;
 
+import ch.bbw.pr.tresorbackend.filter.JwtAuthFilter;
 import ch.bbw.pr.tresorbackend.model.*;
 import ch.bbw.pr.tresorbackend.service.LoginRateLimiterService;
 import ch.bbw.pr.tresorbackend.service.PasswordEncryptService;
+import ch.bbw.pr.tresorbackend.service.SessionService;
 import ch.bbw.pr.tresorbackend.service.UserService;
 
 import com.google.gson.Gson;
@@ -33,6 +35,7 @@ public class UserController {
    private UserService userService;
    private PasswordEncryptService passwordService;
    private LoginRateLimiterService rateLimiter;
+   private SessionService sessionService;
    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
    // build create User REST API
@@ -91,30 +94,37 @@ public class UserController {
 
    // build get user by id REST API
    // http://localhost:8080/api/users/1
+   // Only the authenticated user themselves may fetch their own profile.
    @CrossOrigin(origins = "${CROSS_ORIGIN}")
    @GetMapping("{id}")
-   public ResponseEntity<User> getUserById(@PathVariable("id") Long userId) {
+   public ResponseEntity<User> getUserById(@PathVariable("id") Long userId, HttpServletRequest request) {
+      Long authUserId = currentUserId(request);
+      if (!authUserId.equals(userId)) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
       User user = userService.getUserById(userId);
       if (user == null) return ResponseEntity.notFound().build();
       return new ResponseEntity<>(user, HttpStatus.OK);
    }
 
-   // Build Get All Users REST API
-   // http://localhost:8080/api/users
-   @CrossOrigin(origins = "${CROSS_ORIGIN}")
-   @GetMapping
-   public ResponseEntity<List<User>> getAllUsers() {
-      List<User> users = userService.getAllUsers();
-      if (users.isEmpty()) return ResponseEntity.notFound().build();
-      return new ResponseEntity<>(users, HttpStatus.OK);
-   }
+   // Removed: "get all users" had no ownership check and leaked every
+   // user's data to any caller. There is no legitimate use case for a
+   // regular authenticated user to list all accounts, so this endpoint
+   // was deleted rather than patched. Reintroduce only behind a real
+   // admin role check if it's genuinely needed.
 
    // Build Update User REST API
    // http://localhost:8080/api/users/1
+   // Users may only update their own profile.
    @CrossOrigin(origins = "${CROSS_ORIGIN}")
    @PutMapping("{id}")
    public ResponseEntity<User> updateUser(@PathVariable("id") Long userId,
-                                          @RequestBody User user) {
+                                          @RequestBody User user,
+                                          HttpServletRequest request) {
+      Long authUserId = currentUserId(request);
+      if (!authUserId.equals(userId)) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+      }
       user.setId(userId);
       User updatedUser = userService.updateUser(user);
       if (updatedUser == null) return ResponseEntity.notFound().build();
@@ -122,15 +132,22 @@ public class UserController {
    }
 
    // Build Delete User REST API
+   // Users may only delete their own account.
    @CrossOrigin(origins = "${CROSS_ORIGIN}")
    @DeleteMapping("{id}")
-   public ResponseEntity<String> deleteUser(@PathVariable("id") Long userId) {
+   public ResponseEntity<String> deleteUser(@PathVariable("id") Long userId, HttpServletRequest request) {
+      Long authUserId = currentUserId(request);
+      if (!authUserId.equals(userId)) {
+         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not your account");
+      }
       if( userService.deleteUser(userId))
          return new ResponseEntity<>("User successfully deleted!", HttpStatus.OK);
       return ResponseEntity.notFound().build();
    }
 
    // get user id by email
+   // Public: needed pre-login (e.g. registration availability check).
+   // Deliberately does not reveal anything beyond the numeric id.
    @CrossOrigin(origins = "${CROSS_ORIGIN}")
    @PostMapping("/byemail")
    public ResponseEntity<String> getUserIdByEmail(@RequestBody EmailAdress email, BindingResult bindingResult) {
@@ -172,7 +189,11 @@ public class UserController {
       return ResponseEntity.accepted().body(json);
    }
 
-   // simple login with no websecurity, just name and password
+   // login: verifies the password and hands out a session token that the
+   // frontend must send as "Authorization: Bearer <token>" on every
+   // subsequent request. That token - not any client-supplied
+   // userId/email - is what the rest of the app uses to know who is
+   // calling.
    @CrossOrigin(origins = "${CROSS_ORIGIN}")
    @PostMapping("/login")
    public ResponseEntity<LoginResponse> doLoginUser(@RequestBody LoginUser loginUser, BindingResult bindingResult,
@@ -194,16 +215,25 @@ public class UserController {
       }
 
       User user = userService.findByEmail(loginUser.getEmail());
-      if (user == null) {
-         System.out.println("UserController.doLoginUser: user not found");
-         return ResponseEntity.badRequest().body(new LoginResponse("No user found with this email", null));
+      // Same generic error for "no such user" and "wrong password" so the
+      // endpoint doesn't leak which emails are registered.
+      if (user == null || !passwordService.matches(loginUser.getPassword(), user.getPassword())) {
+         System.out.println("UserController.doLoginUser: invalid credentials");
+         return ResponseEntity.badRequest().body(new LoginResponse("Invalid email or password", null));
       }
 
-      //ToDo: add verification for password match: loginUser.getPassword() vs user.getPassword
-      //todo add implementation
-
+      String token = sessionService.createSession(user.getId());
       System.out.println("UserController.doLoginUser: login successful");
-      return ResponseEntity.ok(new LoginResponse("Login successful", user.getId()));
+      return ResponseEntity.ok(new LoginResponse("Login successful", user.getId(), token));
    }
 
+   /**
+    * Reads the userId that the auth filter attached to the request after
+    * validating the session token. Controllers must use this - never a
+    * client-supplied id/email - to decide what the caller is allowed to
+    * see or change.
+    */
+   private Long currentUserId(HttpServletRequest request) {
+      return (Long) request.getAttribute(JwtAuthFilter.AUTH_USER_ID_ATTRIBUTE);
+   }
 }

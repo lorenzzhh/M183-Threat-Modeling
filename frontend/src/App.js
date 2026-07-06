@@ -5,7 +5,6 @@ import './css/mvp.css';
 import Home from './pages/Home';
 import Layout from "./pages/Layout";
 import NoPage from "./pages/NoPage";
-import Users from './pages/user/Users';
 import LoginUser from "./pages/user/LoginUser";
 import RegisterUser from "./pages/user/RegisterUser";
 import Secrets from "./pages/secret/Secrets";
@@ -18,16 +17,20 @@ import NewNote from "./pages/secret/NewNote";
  * @author Peter Rutschmann
  */
 function App() {
+    // token/userId are filled in after a successful login (see LoginUser.js)
+    // and sent along with every secret request so the backend knows who is
+    // really asking - instead of trusting whatever email a request claims.
     const [loginValues, setLoginValues] = useState({
         email: "",
         password: "",
+        token: "",
+        userId: null,
     });
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Layout loginValues={loginValues}/>}>
-                    <Route index element={<Home/>}/>}/>
-                    <Route path="/user/users" element={<Users loginValues={loginValues}/>}/>
+                    <Route index element={<Home/>}/>
                     <Route path="/user/login" element={<LoginUser loginValues={loginValues} setLoginValues={setLoginValues}/>}/>
                     <Route path="/user/register" element={<RegisterUser loginValues={loginValues} setLoginValues={setLoginValues}/>}/>
                     <Route path="/secret/secrets" element={<Secrets loginValues={loginValues}/>}/>
