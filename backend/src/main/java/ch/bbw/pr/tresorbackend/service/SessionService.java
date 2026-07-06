@@ -1,5 +1,7 @@
 package ch.bbw.pr.tresorbackend.service;
 
+import ch.bbw.pr.tresorbackend.model.Role;
+import lombok.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -24,21 +26,38 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class SessionService {
 
-   private final Map<String, Long> tokenToUserId = new ConcurrentHashMap<>();
+   @Value
+   public static class SessionInfo {
+      Long userId;
+      Role role;
+   }
 
-   public String createSession(Long userId) {
+   private final Map<String, SessionInfo> tokenToSession = new ConcurrentHashMap<>();
+
+   public String createSession(Long userId, Role role) {
       String token = UUID.randomUUID().toString();
-      tokenToUserId.put(token, userId);
+      tokenToSession.put(token, new SessionInfo(userId, role));
       return token;
    }
 
    /** Returns the userId for a token, or null if the token is unknown/invalid. */
    public Long getUserId(String token) {
+      SessionInfo info = getSession(token);
+      return info == null ? null : info.getUserId();
+   }
+
+   /** Returns the role for a token, or null if the token is unknown/invalid. */
+   public Role getRole(String token) {
+      SessionInfo info = getSession(token);
+      return info == null ? null : info.getRole();
+   }
+
+   private SessionInfo getSession(String token) {
       if (token == null) return null;
-      return tokenToUserId.get(token);
+      return tokenToSession.get(token);
    }
 
    public void invalidate(String token) {
-      tokenToUserId.remove(token);
+      tokenToSession.remove(token);
    }
 }
